@@ -25,22 +25,31 @@ const Index = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-4">
-              <button className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100">
+              <Link
+                to="/visitors"
+                className="flex flex-col items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100"
+              >
                 <Users className="h-8 w-8 text-blue-600 mb-2" />
                 <span className="text-sm font-medium">Visitors</span>
-              </button>
-              <button className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100">
+              </Link>
+              <Link
+                to="/notices"
+                className="flex flex-col items-center p-4 bg-green-50 rounded-lg hover:bg-green-100"
+              >
                 <FileText className="h-8 w-8 text-green-600 mb-2" />
                 <span className="text-sm font-medium">Notices</span>
-              </button>
+              </Link>
               <button className="flex flex-col items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100">
                 <Home className="h-8 w-8 text-purple-600 mb-2" />
                 <span className="text-sm font-medium">Society</span>
               </button>
-              <button className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100">
+              <Link
+                to="/settings"
+                className="flex flex-col items-center p-4 bg-orange-50 rounded-lg hover:bg-orange-100"
+              >
                 <Settings className="h-8 w-8 text-orange-600 mb-2" />
                 <span className="text-sm font-medium">Settings</span>
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -56,7 +65,9 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">New Visitor</p>
-                  <p className="text-xs text-gray-500">John Doe arrived at 2:30 PM</p>
+                  <p className="text-xs text-gray-500">
+                    John Doe arrived at 2:30 PM
+                  </p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
@@ -67,7 +78,9 @@ const Index = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">New Notice</p>
-                  <p className="text-xs text-gray-500">Monthly society meeting scheduled</p>
+                  <p className="text-xs text-gray-500">
+                    Monthly society meeting scheduled
+                  </p>
                 </div>
               </div>
             </div>
@@ -102,18 +115,27 @@ const Index = () => {
               <Home className="h-6 w-6" />
               <span className="text-xs mt-1">Home</span>
             </Link>
-            <button className="flex flex-col items-center text-gray-600">
+            <Link
+              to="/visitors"
+              className="flex flex-col items-center text-gray-600"
+            >
               <Users className="h-6 w-6" />
               <span className="text-xs mt-1">Visitors</span>
-            </button>
-            <button className="flex flex-col items-center text-gray-600">
+            </Link>
+            <Link
+              to="/notices"
+              className="flex flex-col items-center text-gray-600"
+            >
               <FileText className="h-6 w-6" />
               <span className="text-xs mt-1">Notices</span>
-            </button>
-            <button className="flex flex-col items-center text-gray-600">
+            </Link>
+            <Link
+              to="/settings"
+              className="flex flex-col items-center text-gray-600"
+            >
               <Settings className="h-6 w-6" />
               <span className="text-xs mt-1">More</span>
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
