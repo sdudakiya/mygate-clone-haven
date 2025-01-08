@@ -2,7 +2,7 @@ import React from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -130,7 +130,10 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
                     render={({ slots }) => (
                       <InputOTPGroup>
                         {slots.map((slot, index) => (
-                          <InputOTPSlot key={index} {...slot} index={index} />
+                          <React.Fragment key={index}>
+                            <InputOTPSlot {...slot} index={index} />
+                            {index !== slots.length - 1 && <InputOTPSeparator />}
+                          </React.Fragment>
                         ))}
                       </InputOTPGroup>
                     )}
