@@ -9,7 +9,118 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      notices: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          id: string
+          posted_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          content: string
+          created_at?: string
+          id?: string
+          posted_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          id?: string
+          posted_by?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notices_posted_by_fkey"
+            columns: ["posted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          is_admin: boolean | null
+          phone_number: string | null
+          unit_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          is_admin?: boolean | null
+          phone_number?: string | null
+          unit_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          phone_number?: string | null
+          unit_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      visitors: {
+        Row: {
+          created_at: string
+          expected_arrival: string
+          host_id: string | null
+          id: string
+          purpose: string
+          status: string | null
+          unit_number: string
+          updated_at: string
+          visitor_name: string
+        }
+        Insert: {
+          created_at?: string
+          expected_arrival: string
+          host_id?: string | null
+          id?: string
+          purpose: string
+          status?: string | null
+          unit_number: string
+          updated_at?: string
+          visitor_name: string
+        }
+        Update: {
+          created_at?: string
+          expected_arrival?: string
+          host_id?: string | null
+          id?: string
+          purpose?: string
+          status?: string | null
+          unit_number?: string
+          updated_at?: string
+          visitor_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visitors_host_id_fkey"
+            columns: ["host_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
