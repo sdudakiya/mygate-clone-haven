@@ -4,8 +4,8 @@
   "description": "A community management application",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#8936FF",
+  "background_color": "#2EC6FE",
   "icons": [
     {
       "src": "/pwa-192x192.png",
