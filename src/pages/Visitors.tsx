@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VisitorList } from "@/components/visitors/VisitorList";
 
 const Visitors = () => {
   const { profile } = useAuth();
@@ -44,11 +45,15 @@ const Visitors = () => {
 
   const addVisitorMutation = useMutation({
     mutationFn: async (visitorData: any) => {
+      // Generate a random 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
       const { data, error } = await supabase.from("visitors").insert([
         {
           ...visitorData,
           host_id: profile?.id,
           unit_number: profile?.unit_number,
+          otp: otp
         },
       ]);
 
@@ -84,6 +89,10 @@ const Visitors = () => {
   const filteredVisitors = visitors?.filter((visitor) =>
     visitor.visitor_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleVerify = () => {
+    queryClient.invalidateQueries({ queryKey: ["visitors"] });
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -180,42 +189,11 @@ const Visitors = () => {
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Recent Visitors</h2>
           </div>
-          <div className="divide-y">
-            {isLoading ? (
-              <div className="p-4 text-center">Loading...</div>
-            ) : filteredVisitors?.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">
-                No visitors found
-              </div>
-            ) : (
-              filteredVisitors?.map((visitor) => (
-                <div
-                  key={visitor.id}
-                  className="p-4 flex items-center justify-between"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="h-12 w-12 rounded-full bg-gray-200" />
-                    <div>
-                      <h3 className="font-medium">{visitor.visitor_name}</h3>
-                      <p className="text-sm text-gray-500">
-                        {new Date(visitor.expected_arrival).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      visitor.status === "approved"
-                        ? "bg-green-100 text-green-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {visitor.status.charAt(0).toUpperCase() +
-                      visitor.status.slice(1)}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
+          {isLoading ? (
+            <div className="p-4 text-center">Loading...</div>
+          ) : (
+            <VisitorList visitors={filteredVisitors || []} onVerify={handleVerify} />
+          )}
         </div>
       </main>
     </div>

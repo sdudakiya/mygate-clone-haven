@@ -77,12 +77,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"] | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"] | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"] | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       visitors: {
         Row: {
           created_at: string
           expected_arrival: string
           host_id: string | null
           id: string
+          otp: string | null
+          otp_verified_at: string | null
+          otp_verified_by: string | null
           purpose: string
           status: string | null
           unit_number: string
@@ -94,6 +118,9 @@ export type Database = {
           expected_arrival: string
           host_id?: string | null
           id?: string
+          otp?: string | null
+          otp_verified_at?: string | null
+          otp_verified_by?: string | null
           purpose: string
           status?: string | null
           unit_number: string
@@ -105,6 +132,9 @@ export type Database = {
           expected_arrival?: string
           host_id?: string | null
           id?: string
+          otp?: string | null
+          otp_verified_at?: string | null
+          otp_verified_by?: string | null
           purpose?: string
           status?: string | null
           unit_number?: string
@@ -119,6 +149,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "visitors_otp_verified_by_fkey"
+            columns: ["otp_verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -129,7 +166,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "security"
     }
     CompositeTypes: {
       [_ in never]: never
