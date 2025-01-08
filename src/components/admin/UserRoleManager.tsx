@@ -11,11 +11,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+type Role = "admin" | "security" | "unit_owner";
+
 const UserRoleManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedUser, setSelectedUser] = useState("");
-  const [selectedRole, setSelectedRole] = useState("");
+  const [selectedRole, setSelectedRole] = useState<Role | "">("");
 
   const { data: users = [] } = useQuery({
     queryKey: ["users"],
@@ -28,12 +30,10 @@ const UserRoleManager = () => {
 
   const assignRoleMutation = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("user_roles").insert([
-        {
-          user_id: selectedUser,
-          role: selectedRole,
-        },
-      ]);
+      const { error } = await supabase.from("user_roles").insert({
+        user_id: selectedUser,
+        role: selectedRole as Role,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -75,7 +75,7 @@ const UserRoleManager = () => {
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Select Role</label>
-          <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <Select value={selectedRole} onValueChange={setSelectedRole as (value: string) => void}>
             <SelectTrigger>
               <SelectValue placeholder="Select a role" />
             </SelectTrigger>
