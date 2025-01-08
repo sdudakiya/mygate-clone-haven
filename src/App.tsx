@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/AuthContext";
+import Layout from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Visitors from "./pages/Visitors";
 import Notices from "./pages/Notices";
@@ -24,7 +25,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/login" />;
   }
 
-  return <>{children}</>;
+  return <Layout>{children}</Layout>;
 };
 
 const AppRoutes = () => (

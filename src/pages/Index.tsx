@@ -1,29 +1,10 @@
-import { Bell, Home, Users, FileText, Settings } from "lucide-react";
-import { Link } from "react-router-dom";
-
 const Index = () => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-blue-600">MyGate</h1>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-full hover:bg-gray-100">
-                <Bell className="h-6 w-6 text-gray-600" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Quick Actions */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Quick Actions */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-4">
               <Link
                 to="/visitors"
@@ -51,11 +32,11 @@ const Index = () => {
                 <span className="text-sm font-medium">Settings</span>
               </Link>
             </div>
-          </div>
+        </div>
 
-          {/* Recent Activity */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
+        {/* Recent Activity */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Recent Activity</h2>
             <div className="space-y-4">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
@@ -84,11 +65,11 @@ const Index = () => {
                 </div>
               </div>
             </div>
-          </div>
+        </div>
 
-          {/* Community Updates */}
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-lg font-semibold mb-4">Community Updates</h2>
+        {/* Community Updates */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Community Updates</h2>
             <div className="space-y-4">
               <div className="p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm font-medium">Maintenance Schedule</p>
@@ -103,43 +84,9 @@ const Index = () => {
                 </p>
               </div>
             </div>
-          </div>
         </div>
-      </main>
-
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-around py-3">
-            <Link to="/" className="flex flex-col items-center text-blue-600">
-              <Home className="h-6 w-6" />
-              <span className="text-xs mt-1">Home</span>
-            </Link>
-            <Link
-              to="/visitors"
-              className="flex flex-col items-center text-gray-600"
-            >
-              <Users className="h-6 w-6" />
-              <span className="text-xs mt-1">Visitors</span>
-            </Link>
-            <Link
-              to="/notices"
-              className="flex flex-col items-center text-gray-600"
-            >
-              <FileText className="h-6 w-6" />
-              <span className="text-xs mt-1">Notices</span>
-            </Link>
-            <Link
-              to="/settings"
-              className="flex flex-col items-center text-gray-600"
-            >
-              <Settings className="h-6 w-6" />
-              <span className="text-xs mt-1">More</span>
-            </Link>
-          </div>
-        </div>
-      </nav>
-    </div>
+      </div>
+    </main>
   );
 };
 

@@ -4,7 +4,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/use-user-role";
 import { Button } from "@/components/ui/button";
+import UserRoleManager from "@/components/admin/UserRoleManager";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +19,7 @@ import { Label } from "@/components/ui/label";
 
 const Settings = () => {
   const { profile, signOut } = useAuth();
+  const { isAdmin } = useUserRole();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -47,21 +50,9 @@ const Settings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center">
-            <Link to="/" className="mr-4">
-              <ArrowLeft className="h-6 w-6 text-gray-600" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="bg-white rounded-lg shadow mb-6">
+        <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">Profile Information</h2>
               <Button
@@ -121,11 +112,19 @@ const Settings = () => {
                 </p>
               </div>
             )}
+        </div>
+      </div>
+
+      {isAdmin && (
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6">
+            <UserRoleManager />
           </div>
         </div>
+      )}
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="divide-y">
+      <div className="bg-white rounded-lg shadow">
+        <div className="divide-y">
             <button className="w-full p-4 flex items-center space-x-4 hover:bg-gray-50">
               <Bell className="h-6 w-6 text-gray-600" />
               <span className="flex-1 text-left">Notifications</span>
@@ -145,9 +144,8 @@ const Settings = () => {
               <LogOut className="h-6 w-6" />
               <span className="flex-1 text-left">Logout</span>
             </button>
-          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
