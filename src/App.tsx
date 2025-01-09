@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false, // Don't refetch when window regains focus
       refetchOnMount: false, // Don't refetch on component mount
       retry: 1, // Only retry failed requests once
-      keepPreviousData: true, // Keep showing old data while fetching new data
+      placeholderData: 'keep-previous', // Keep showing old data while fetching new data
     },
   },
 });
