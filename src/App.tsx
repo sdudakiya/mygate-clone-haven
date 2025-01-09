@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useAuth } from "./contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "./components/layout/Layout";
 import Index from "./pages/Index";
 import Visitors from "./pages/Visitors";
@@ -16,23 +17,33 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // Data is considered fresh for 5 minutes
-      gcTime: 1000 * 60 * 30, // Cache is kept for 30 minutes (replaced cacheTime)
+      gcTime: 1000 * 60 * 30, // Cache is kept for 30 minutes
       refetchOnWindowFocus: false, // Don't refetch when window regains focus
       refetchOnMount: false, // Don't refetch on component mount
       retry: 1, // Only retry failed requests once
+      keepPreviousData: true, // Keep showing old data while fetching new data
     },
   },
 });
+
+const LoadingState = () => (
+  <Layout>
+    <div className="space-y-4 p-4">
+      <Skeleton className="h-12 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
+    </div>
+  </Layout>
+);
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { session, isLoading } = useAuth();
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-lg">Loading...</div>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!session) {
