@@ -38,15 +38,7 @@ self.addEventListener('fetch', (event) => {
 
   // Handle cross-origin requests differently
   if (!event.request.url.startsWith(self.location.origin)) {
-    // For cross-origin requests, just fetch normally without caching
-    event.respondWith(
-      fetch(event.request)
-        .catch(() => {
-          console.log('Failed to fetch cross-origin resource:', event.request.url);
-          return new Response('Failed to load resource', { status: 404 });
-        })
-    );
-    return;
+    return; // Let the browser handle external requests normally
   }
 
   event.respondWith(
@@ -56,11 +48,9 @@ self.addEventListener('fetch', (event) => {
           return response;
         }
 
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest)
+        return fetch(event.request)
           .then((response) => {
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
 
@@ -77,7 +67,11 @@ self.addEventListener('fetch', (event) => {
             return response;
           })
           .catch(() => {
-            return caches.match('/') || new Response('Offline', {
+            // Return the offline page for navigation requests
+            if (event.request.mode === 'navigate') {
+              return caches.match('/');
+            }
+            return new Response('Offline', {
               status: 503,
               statusText: 'Service Unavailable'
             });

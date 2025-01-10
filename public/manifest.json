@@ -4,8 +4,8 @@
   "description": "A community management application",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#8936FF",
-  "background_color": "#2EC6FE",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
   "icons": [
     {
       "src": "/pwa-192x192.png",
@@ -18,22 +18,6 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-desktop.png",
-      "sizes": "1920x1080",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Desktop view of MyGate"
-    },
-    {
-      "src": "/screenshot-mobile.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Mobile view of MyGate"
     }
   ]
 }
