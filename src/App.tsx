@@ -21,9 +21,7 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnMount: false,
       retry: 1,
-      placeholderData: 'keep-previous',
-      suspense: false,
-      useErrorBoundary: false
+      placeholderData: 'keep-previous'
     },
   },
 });
