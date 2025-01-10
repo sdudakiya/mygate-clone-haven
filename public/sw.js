@@ -1,86 +1,96 @@
-const CACHE_NAME = 'mygate-v1';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'mygate-cache-v1';
+
+// Files to cache
+const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/favicon.ico',
   '/pwa-192x192.png',
-  '/pwa-512x512.png',
-  '/screenshot-desktop.png',
-  '/screenshot-mobile.png',
-  '/favicon.ico'
+  '/pwa-512x512.png'
 ];
 
+// Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => {
+        return cache.addAll(urlsToCache);
+      })
+      .catch((error) => {
+        console.error('Cache installation failed:', error);
+      })
   );
 });
 
+// Activate event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== CACHE_NAME)
-          .map((name) => caches.delete(name))
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
+          }
+        })
       );
     })
   );
 });
 
+// Fetch event
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
-  // Handle cross-origin requests differently
+  // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
-    return; // Let the browser handle external requests normally
+    return;
   }
 
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
+        // Cache hit - return response
         if (response) {
           return response;
         }
 
+        // Clone the request
         return fetch(event.request)
           .then((response) => {
+            // Check if we received a valid response
             if (!response || response.status !== 200) {
               return response;
             }
 
+            // Clone the response
             const responseToCache = response.clone();
 
+            // Add to cache
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
-              })
-              .catch(error => {
-                console.error('Cache put error:', error);
               });
 
             return response;
           })
           .catch(() => {
-            // Return the offline page for navigation requests
+            // Return cached index.html for navigation requests when offline
             if (event.request.mode === 'navigate') {
-              return caches.match('/');
+              return caches.match('/index.html');
             }
-            return new Response('Offline', {
+            // Return a basic offline response for other requests
+            return new Response('Offline content not available', {
               status: 503,
-              statusText: 'Service Unavailable'
+              statusText: 'Service Unavailable',
+              headers: new Headers({
+                'Content-Type': 'text/plain'
+              })
             });
           });
       })
   );
 });
 
-// Handle skip waiting
+// Handle messages from clients
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
