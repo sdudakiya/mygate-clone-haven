@@ -16,12 +16,14 @@ import Login from "./pages/Login";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // Data is considered fresh for 5 minutes
-      gcTime: 1000 * 60 * 30, // Cache is kept for 30 minutes
-      refetchOnWindowFocus: false, // Don't refetch when window regains focus
-      refetchOnMount: false, // Don't refetch on component mount
-      retry: 1, // Only retry failed requests once
-      placeholderData: 'keep-previous', // Keep showing old data while fetching new data
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 30,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1,
+      placeholderData: 'keep-previous',
+      suspense: false,
+      useErrorBoundary: false
     },
   },
 });
@@ -47,7 +49,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!session) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Layout>{children}</Layout>;
@@ -94,13 +96,13 @@ const AppRoutes = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
+      <AuthProvider>
+        <BrowserRouter>
           <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
+          <Toaster />
+          <Sonner />
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

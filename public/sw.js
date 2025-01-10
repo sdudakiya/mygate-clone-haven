@@ -36,8 +36,16 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip cross-origin requests
+  // Handle cross-origin requests differently
   if (!event.request.url.startsWith(self.location.origin)) {
+    // For cross-origin requests, just fetch normally without caching
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          console.log('Failed to fetch cross-origin resource:', event.request.url);
+          return new Response('Failed to load resource', { status: 404 });
+        })
+    );
     return;
   }
 
@@ -45,32 +53,34 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request)
       .then((response) => {
         if (response) {
-          return response; // Return cached response if available
+          return response;
         }
-        
-        // Clone the request because it can only be used once
+
         const fetchRequest = event.request.clone();
 
         return fetch(fetchRequest)
           .then((response) => {
-            // Check if we received a valid response
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // Clone the response because it can only be used once
             const responseToCache = response.clone();
 
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
+              })
+              .catch(error => {
+                console.error('Cache put error:', error);
               });
 
             return response;
           })
           .catch(() => {
-            // Return a fallback response or cached version if available
-            return caches.match('/') || new Response('Offline');
+            return caches.match('/') || new Response('Offline', {
+              status: 503,
+              statusText: 'Service Unavailable'
+            });
           });
       })
   );
