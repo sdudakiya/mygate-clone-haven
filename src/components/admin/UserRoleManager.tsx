@@ -31,7 +31,7 @@ interface UserWithRoles {
 const UserRoleManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedRole, setSelectedRole] = useState<Role | "">("");
+  const [selectedRoles, setSelectedRoles] = useState<Record<string, Role | "">>({});
 
   // Fetch all users and their current roles
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
@@ -87,13 +87,17 @@ const UserRoleManager = () => {
         if (error) throw error;
       }
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
         description: "Role assigned successfully",
       });
-      setSelectedRole("");
+      // Clear only the selected role for this specific user
+      setSelectedRoles(prev => ({
+        ...prev,
+        [variables.userId]: "",
+      }));
     },
     onError: (error) => {
       console.error("Error assigning role:", error);
@@ -179,8 +183,13 @@ const UserRoleManager = () => {
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Select
-                    value={selectedRole}
-                    onValueChange={(value) => setSelectedRole(value as Role)}
+                    value={selectedRoles[user.id] || ""}
+                    onValueChange={(value) => 
+                      setSelectedRoles(prev => ({
+                        ...prev,
+                        [user.id]: value as Role
+                      }))
+                    }
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Select a role" />
@@ -193,6 +202,7 @@ const UserRoleManager = () => {
                   </Select>
                   <Button
                     onClick={() => {
+                      const selectedRole = selectedRoles[user.id];
                       if (selectedRole) {
                         assignRoleMutation.mutate({
                           userId: user.id,
@@ -200,7 +210,7 @@ const UserRoleManager = () => {
                         });
                       }
                     }}
-                    disabled={!selectedRole}
+                    disabled={!selectedRoles[user.id]}
                     size="sm"
                   >
                     Assign
