@@ -10,42 +10,81 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Role = "admin" | "security" | "unit_owner";
 
 const UserRoleManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedUser, setSelectedUser] = useState("");
   const [selectedRole, setSelectedRole] = useState<Role | "">("");
 
-  const { data: users = [] } = useQuery({
+  // Fetch all users and their current roles
+  const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*");
-      if (error) throw error;
-      return data;
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*");
+      
+      if (profilesError) throw profilesError;
+
+      const { data: roles, error: rolesError } = await supabase
+        .from("user_roles")
+        .select("*");
+      
+      if (rolesError) throw rolesError;
+
+      return profiles.map((profile) => ({
+        ...profile,
+        roles: roles
+          .filter((role) => role.user_id === profile.id)
+          .map((role) => role.role),
+      }));
     },
   });
 
   const assignRoleMutation = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("user_roles").insert({
-        user_id: selectedUser,
-        role: selectedRole as Role,
-      });
-      if (error) throw error;
+    mutationFn: async ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: Role;
+    }) => {
+      // First check if the role already exists
+      const { data: existingRoles } = await supabase
+        .from("user_roles")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("role", role);
+
+      // If role doesn't exist, insert it
+      if (!existingRoles?.length) {
+        const { error } = await supabase.from("user_roles").insert({
+          user_id: userId,
+          role: role,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
         description: "Role assigned successfully",
       });
-      setSelectedUser("");
       setSelectedRole("");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error assigning role:", error);
       toast({
         title: "Error",
         description: "Failed to assign role",
@@ -54,45 +93,112 @@ const UserRoleManager = () => {
     },
   });
 
+  const removeRoleMutation = useMutation({
+    mutationFn: async ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: Role;
+    }) => {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId)
+        .eq("role", role);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      toast({
+        title: "Success",
+        description: "Role removed successfully",
+      });
+    },
+    onError: (error) => {
+      console.error("Error removing role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove role",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (isLoadingUsers) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Assign User Roles</h2>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Select User</label>
-          <Select value={selectedUser} onValueChange={setSelectedUser}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a user" />
-            </SelectTrigger>
-            <SelectContent>
-              {users.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.full_name || user.id}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Select Role</label>
-          <Select value={selectedRole} onValueChange={setSelectedRole as (value: string) => void}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select a role" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="security">Security</SelectItem>
-              <SelectItem value="unit_owner">Unit Owner</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button
-          onClick={() => assignRoleMutation.mutate()}
-          disabled={!selectedUser || !selectedRole}
-        >
-          Assign Role
-        </Button>
-      </div>
+      <h2 className="text-lg font-semibold">Manage User Roles</h2>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Current Roles</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>{user.full_name || "Unnamed User"}</TableCell>
+              <TableCell>
+                <div className="flex gap-1 flex-wrap">
+                  {user.roles?.map((role: Role) => (
+                    <div
+                      key={role}
+                      className="bg-gray-100 px-2 py-1 rounded-full text-sm flex items-center gap-1"
+                    >
+                      {role}
+                      <button
+                        onClick={() =>
+                          removeRoleMutation.mutate({ userId: user.id, role })
+                        }
+                        className="hover:text-red-500 ml-1"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={selectedRole}
+                    onValueChange={(value) => setSelectedRole(value as Role)}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="security">Security</SelectItem>
+                      <SelectItem value="unit_owner">Unit Owner</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    onClick={() => {
+                      if (selectedRole) {
+                        assignRoleMutation.mutate({
+                          userId: user.id,
+                          role: selectedRole as Role,
+                        });
+                      }
+                    }}
+                    disabled={!selectedRole}
+                    size="sm"
+                  >
+                    Assign
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
