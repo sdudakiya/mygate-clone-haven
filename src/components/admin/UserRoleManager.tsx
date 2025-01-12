@@ -30,18 +30,21 @@ const UserRoleManager = () => {
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
+      // First get all users from auth.users through profiles table
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*");
       
       if (profilesError) throw profilesError;
 
+      // Then get all roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("*");
       
       if (rolesError) throw rolesError;
 
+      // Map profiles with their roles
       return profiles.map((profile) => ({
         ...profile,
         roles: roles
@@ -136,6 +139,7 @@ const UserRoleManager = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Current Roles</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -144,6 +148,7 @@ const UserRoleManager = () => {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.full_name || "Unnamed User"}</TableCell>
+              <TableCell>{user.email || "No email"}</TableCell>
               <TableCell>
                 <div className="flex gap-1 flex-wrap">
                   {user.roles?.map((role: Role) => (
