@@ -37,31 +37,26 @@ const UserRoleManager = () => {
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      // First get all users from auth.users through admin API
-      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
-      if (authError) throw authError;
-
-      // Then get all profiles
+      // Get all profiles (RLS will ensure only admins can access this)
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*");
       if (profilesError) throw profilesError;
 
-      // Then get all roles
+      // Get all roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("*");
       if (rolesError) throw rolesError;
 
-      // Map auth users with their profiles and roles
-      return authUsers.map((authUser): UserWithRoles => {
-        const profile = profiles.find(p => p.id === authUser.id);
+      // Map profiles with their roles
+      return profiles.map((profile): UserWithRoles => {
         return {
-          id: authUser.id,
-          email: authUser.email,
-          full_name: profile?.full_name || null,
+          id: profile.id,
+          full_name: profile.full_name,
+          email: null, // We can't get emails directly due to auth restrictions
           roles: roles
-            .filter((role) => role.user_id === authUser.id)
+            .filter((role) => role.user_id === profile.id)
             .map((role) => role.role as Role),
         };
       });
@@ -153,7 +148,6 @@ const UserRoleManager = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
             <TableHead>Current Roles</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -162,7 +156,6 @@ const UserRoleManager = () => {
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.full_name || "Unnamed User"}</TableCell>
-              <TableCell>{user.email || "No email"}</TableCell>
               <TableCell>
                 <div className="flex gap-1 flex-wrap">
                   {user.roles?.map((role: Role) => (
