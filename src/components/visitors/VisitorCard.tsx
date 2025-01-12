@@ -126,12 +126,12 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
                   <InputOTP
                     maxLength={6}
                     value={otp}
-                    onChange={(value) => setOtp(value)}
+                    onChange={setOtp}
                     render={({ slots }) => (
                       <InputOTPGroup>
                         {slots.map((slot, index) => (
                           <React.Fragment key={index}>
-                            <InputOTPSlot {...slot} index={index} />
+                            <InputOTPSlot {...slot} />
                             {index !== slots.length - 1 && <InputOTPSeparator />}
                           </React.Fragment>
                         ))}
