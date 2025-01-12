@@ -21,6 +21,13 @@ import {
 
 type Role = "admin" | "security" | "unit_owner";
 
+interface UserWithRoles {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  roles: Role[];
+}
+
 const UserRoleManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -30,27 +37,34 @@ const UserRoleManager = () => {
   const { data: users = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: async () => {
-      // First get all users from auth.users through profiles table
+      // First get all users from auth.users through admin API
+      const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+      if (authError) throw authError;
+
+      // Then get all profiles
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("*");
-      
       if (profilesError) throw profilesError;
 
       // Then get all roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("*");
-      
       if (rolesError) throw rolesError;
 
-      // Map profiles with their roles
-      return profiles.map((profile) => ({
-        ...profile,
-        roles: roles
-          .filter((role) => role.user_id === profile.id)
-          .map((role) => role.role),
-      }));
+      // Map auth users with their profiles and roles
+      return authUsers.map((authUser): UserWithRoles => {
+        const profile = profiles.find(p => p.id === authUser.id);
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          full_name: profile?.full_name || null,
+          roles: roles
+            .filter((role) => role.user_id === authUser.id)
+            .map((role) => role.role as Role),
+        };
+      });
     },
   });
 
