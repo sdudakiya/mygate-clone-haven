@@ -38,18 +38,19 @@ const LoadingState = () => (
 );
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, isLoading } = useAuth();
+    const { session, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <LoadingState />;
-  }
+    if (isLoading) {
+        return <LoadingState />;
+    }
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Layout>{children}</Layout>;
+    // ONLY redirect if user is not logged in AFTER loading
+    if (!session && !isLoading) {
+        return <Navigate to="/login" replace />;
+    }
+    return <Layout>{children}</Layout>;
 };
+
 
 const AppRoutes = () => (
   <Routes>
