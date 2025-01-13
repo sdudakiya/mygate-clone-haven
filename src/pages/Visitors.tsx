@@ -1,6 +1,6 @@
 import { ArrowLeft, UserPlus, Clock, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +44,29 @@ const Visitors = () => {
       return data;
     },
   });
+
+  // Subscribe to real-time updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('visitors-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'visitors'
+        },
+        () => {
+          // Refetch visitors data when changes occur
+          queryClient.invalidateQueries({ queryKey: ["visitors"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const addVisitorMutation = useMutation({
     mutationFn: async (visitorData: any) => {
