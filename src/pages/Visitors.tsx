@@ -40,9 +40,18 @@ const Visitors = () => {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch visitors",
+          variant: "destructive",
+        });
+        throw error;
+      }
       return data;
     },
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch when window gains focus
   });
 
   // Subscribe to real-time updates
@@ -52,12 +61,11 @@ const Visitors = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all changes (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'visitors'
         },
         () => {
-          // Refetch visitors data when changes occur
           queryClient.invalidateQueries({ queryKey: ["visitors"] });
         }
       )
