@@ -1,4 +1,4 @@
-# Use the Node.js 18 base image
+# Use Node.js as the base image
 FROM node:18-alpine as builder
 
 # Set the working directory
@@ -16,17 +16,20 @@ COPY . .
 # Build the application for production
 RUN npm run build
 
-# Use a lightweight server image for serving the production build
-FROM nginx:alpine as production
+# Start a new stage for the runtime container
+FROM node:18-alpine as runtime
 
-# Copy the built files from the builder stage
-COPY --from=builder /app/dist /usr/share/nginx/html
+# Set the working directory
+WORKDIR /app
 
-# Copy a custom nginx configuration if needed (optional)
-# COPY nginx.conf /etc/nginx/nginx.conf
+# Copy the build artifacts from the builder stage
+COPY --from=builder /app/dist ./dist
 
-# Expose port 80
-EXPOSE 80
+# Install a lightweight HTTP server for serving static files
+RUN npm install -g serve
 
-# Start Nginx server
-CMD ["nginx", "-g", "daemon off;"]
+# Expose the application on port 3001
+EXPOSE 3001
+
+# Serve the static files using "serve"
+CMD ["serve", "-s", "dist", "-l", "3001"]
