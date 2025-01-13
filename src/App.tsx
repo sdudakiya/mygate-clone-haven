@@ -14,12 +14,104 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import TestAuth from './contexts/TestAuth'; 
 
-function App() {
-    return (
+// function App() {
+//     return (
+//         <AuthProvider>
+//              <TestAuth />
+//         </AuthProvider>
+//     )
+// }
+
+// export default App;
+
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 5, // 5 minutes
+    },
+  },
+});
+
+const LoadingState = () => (
+  <Layout>
+    <div className="space-y-4 p-4">
+      <Skeleton className="h-12 w-full" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
+    </div>
+  </Layout>
+);
+
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { session, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Layout>{children}</Layout>;
+};
+
+const AppRoutes = () => (
+  <Routes>
+    <Route path="/login" element={<Login />} />
+    <Route
+      path="/"
+      element={
+{/*         <ProtectedRoute> */}
+          <Index />
+{/*         </ProtectedRoute> */}
+      }
+    />
+    <Route
+      path="/visitors"
+      element={
+{/*         <ProtectedRoute> */}
+          <Visitors />
+{/*         </ProtectedRoute> */}
+      }
+    />
+    <Route
+      path="/notices"
+      element={
+{/*         <ProtectedRoute> */}
+          <Notices />
+{/*         </ProtectedRoute> */}
+      }
+    />
+    <Route
+      path="/settings"
+      element={
+{/*         <ProtectedRoute> */}
+          <Settings />
+{/*         </ProtectedRoute> */}
+      }
+    />
+  </Routes>
+);
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>
         <AuthProvider>
-             <TestAuth />
+          <AppRoutes />
+          <Toaster />
+          <Sonner />
         </AuthProvider>
-    )
-}
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
