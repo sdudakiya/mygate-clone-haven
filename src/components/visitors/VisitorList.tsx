@@ -1,6 +1,5 @@
 import React from 'react';
 import { VisitorCard } from './VisitorCard';
-import { useUserRole } from '@/hooks/use-user-role';
 
 interface VisitorListProps {
   visitors: any[];
@@ -8,8 +7,6 @@ interface VisitorListProps {
 }
 
 export const VisitorList: React.FC<VisitorListProps> = ({ visitors, onVerify }) => {
-  const { isSecurity } = useUserRole();
-
   return (
     <div className="divide-y">
       {visitors.length === 0 ? (
@@ -22,7 +19,6 @@ export const VisitorList: React.FC<VisitorListProps> = ({ visitors, onVerify }) 
             key={visitor.id}
             visitor={visitor}
             onVerify={onVerify}
-            isSecurity={isSecurity}
           />
         ))
       )}

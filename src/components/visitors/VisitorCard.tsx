@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserRole } from '@/hooks/use-user-role';
 
 interface VisitorCardProps {
   visitor: {
@@ -14,15 +15,16 @@ interface VisitorCardProps {
     expected_arrival: string;
     status: string;
     otp?: string;
+    unit_number: string;
     otp_verified_at?: string;
   };
   onVerify: () => void;
-  isSecurity?: boolean;
 }
 
-export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify, isSecurity }) => {
+export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) => {
   const { toast } = useToast();
   const { profile } = useAuth();
+  const { isSecurity, isUnitOwner } = useUserRole();
   const [isVerifying, setIsVerifying] = React.useState(false);
   const [otp, setOtp] = React.useState("");
 
@@ -64,7 +66,7 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify, isS
     }
   };
 
-  const handleSecurityApproval = async () => {
+  const handleApproval = async () => {
     try {
       const { error } = await supabase
         .from('visitors')
@@ -101,6 +103,12 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify, isS
             {new Date(visitor.expected_arrival).toLocaleString()}
           </p>
           <p className="text-sm text-gray-500">{visitor.purpose}</p>
+          {isSecurity && (
+            <p className="text-sm text-gray-500">Unit: {visitor.unit_number}</p>
+          )}
+          {isUnitOwner && visitor.otp && (
+            <p className="text-sm font-medium text-blue-600">OTP: {visitor.otp}</p>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2">
@@ -115,36 +123,38 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify, isS
         </span>
         {visitor.status !== 'approved' && (
           <>
-            <Dialog open={isVerifying} onOpenChange={setIsVerifying}>
-              <DialogTrigger asChild>
-                <Button variant="outline">Verify OTP</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Enter Visitor OTP</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col items-center space-y-4">
-                  <InputOTP
-                    maxLength={6}
-                    value={otp}
-                    onChange={setOtp}
-                    render={({ slots }) => (
-                      <InputOTPGroup>
-                        {slots.map((slot, index) => (
-                          <React.Fragment key={index}>
-                            <InputOTPSlot {...slot} />
-                            {index !== slots.length - 1 && <InputOTPSeparator />}
-                          </React.Fragment>
-                        ))}
-                      </InputOTPGroup>
-                    )}
-                  />
-                  <Button onClick={handleVerifyOTP}>Verify</Button>
-                </div>
-              </DialogContent>
-            </Dialog>
             {isSecurity && (
-              <Button onClick={handleSecurityApproval}>Security Approve</Button>
+              <Dialog open={isVerifying} onOpenChange={setIsVerifying}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Verify OTP</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Enter Visitor OTP</DialogTitle>
+                  </DialogHeader>
+                  <div className="flex flex-col items-center space-y-4">
+                    <InputOTP
+                      maxLength={6}
+                      value={otp}
+                      onChange={setOtp}
+                      render={({ slots }) => (
+                        <InputOTPGroup>
+                          {slots.map((slot, index) => (
+                            <React.Fragment key={index}>
+                              <InputOTPSlot {...slot} />
+                              {index !== slots.length - 1 && <InputOTPSeparator />}
+                            </React.Fragment>
+                          ))}
+                        </InputOTPGroup>
+                      )}
+                    />
+                    <Button onClick={handleVerifyOTP}>Verify</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+            {isUnitOwner && (
+              <Button onClick={handleApproval}>Approve</Button>
             )}
           </>
         )}

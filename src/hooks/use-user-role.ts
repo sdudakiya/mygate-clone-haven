@@ -17,11 +17,13 @@ export const useUserRole = () => {
 
   const isAdmin = roles.includes("admin");
   const isSecurity = roles.includes("security");
+  const isUnitOwner = roles.includes("unit_owner");
 
   return {
     roles,
     isAdmin,
     isSecurity,
+    isUnitOwner,
     isLoading,
   };
 };
