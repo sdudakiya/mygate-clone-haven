@@ -17,9 +17,10 @@ interface VisitorCardProps {
     otp_verified_at?: string;
   };
   onVerify: () => void;
+  isSecurity?: boolean;
 }
 
-export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) => {
+export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify, isSecurity }) => {
   const { toast } = useToast();
   const { profile } = useAuth();
   const [isVerifying, setIsVerifying] = React.useState(false);
@@ -142,7 +143,9 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
                 </div>
               </DialogContent>
             </Dialog>
-            <Button onClick={handleSecurityApproval}>Security Approve</Button>
+            {isSecurity && (
+              <Button onClick={handleSecurityApproval}>Security Approve</Button>
+            )}
           </>
         )}
       </div>

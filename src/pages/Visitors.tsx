@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useUserRole } from "@/hooks/use-user-role";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +20,7 @@ import { VisitorList } from "@/components/visitors/VisitorList";
 
 const Visitors = () => {
   const { profile } = useAuth();
+  const { isSecurity } = useUserRole();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddingVisitor, setIsAddingVisitor] = useState(false);
@@ -27,6 +29,7 @@ const Visitors = () => {
     visitor_name: "",
     purpose: "",
     expected_arrival: "",
+    unit_number: "",
   });
 
   const { data: visitors, isLoading } = useQuery({
@@ -35,7 +38,6 @@ const Visitors = () => {
       const { data, error } = await supabase
         .from("visitors")
         .select("*")
-        .eq("host_id", profile?.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -45,15 +47,14 @@ const Visitors = () => {
 
   const addVisitorMutation = useMutation({
     mutationFn: async (visitorData: any) => {
-      // Generate a random 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
       const { data, error } = await supabase.from("visitors").insert([
         {
           ...visitorData,
-          host_id: profile?.id,
-          unit_number: profile?.unit_number,
-          otp: otp
+          host_id: isSecurity ? null : profile?.id,
+          unit_number: isSecurity ? visitorData.unit_number : profile?.unit_number,
+          otp: otp,
         },
       ]);
 
@@ -67,6 +68,7 @@ const Visitors = () => {
         visitor_name: "",
         purpose: "",
         expected_arrival: "",
+        unit_number: "",
       });
       toast({
         title: "Success",
@@ -83,6 +85,14 @@ const Visitors = () => {
   });
 
   const handleAddVisitor = () => {
+    if (!newVisitor.visitor_name || !newVisitor.purpose || !newVisitor.expected_arrival || (isSecurity && !newVisitor.unit_number)) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
     addVisitorMutation.mutate(newVisitor);
   };
 
@@ -158,6 +168,21 @@ const Visitors = () => {
                     }
                   />
                 </div>
+                {isSecurity && (
+                  <div>
+                    <Label htmlFor="unit_number">Unit Number</Label>
+                    <Input
+                      id="unit_number"
+                      value={newVisitor.unit_number}
+                      onChange={(e) =>
+                        setNewVisitor({
+                          ...newVisitor,
+                          unit_number: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                )}
                 <div>
                   <Label htmlFor="expected_arrival">Expected Arrival</Label>
                   <Input
