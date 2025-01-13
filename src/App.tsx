@@ -14,17 +14,6 @@ import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import TestAuth from './contexts/TestAuth'; 
 
-// function App() {
-//     return (
-//         <AuthProvider>
-//              <TestAuth />
-//         </AuthProvider>
-//     )
-// }
-
-// export default App;
-
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -68,33 +57,25 @@ const AppRoutes = () => (
     <Route
       path="/"
       element={
-{/*         <ProtectedRoute> */}
           <Index />
-{/*         </ProtectedRoute> */}
       }
     />
     <Route
       path="/visitors"
       element={
-{/*         <ProtectedRoute> */}
           <Visitors />
-{/*         </ProtectedRoute> */}
       }
     />
     <Route
       path="/notices"
       element={
-{/*         <ProtectedRoute> */}
           <Notices />
-{/*         </ProtectedRoute> */}
       }
     />
     <Route
       path="/settings"
       element={
-{/*         <ProtectedRoute> */}
           <Settings />
-{/*         </ProtectedRoute> */}
       }
     />
   </Routes>
