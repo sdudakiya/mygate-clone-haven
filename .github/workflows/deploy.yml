@@ -3,26 +3,13 @@ name: Deploy to Dokploy
 on:
   push:
     branches:
-      - main  # Adjust branch name if necessary
+      - main  # Adjust to your desired branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20  # Adjust to your project's Node.js version
-
-    - name: Install dependencies
-      run: npm install
-
-    - name: Build the project
-      run: npm run build
-
-    - name: Deploy to Dokploy
-      run : dokploy deploy mygate --path ./build
+      - name: Trigger Dokploy Deployment
+        run: |
+          curl -X POST https://dokploy.kalindimarketing.com/api/deploy/jH3OwltiRwEsfBvwSMu6U
