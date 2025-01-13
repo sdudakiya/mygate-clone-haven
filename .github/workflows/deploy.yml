@@ -25,4 +25,4 @@ jobs:
       run: npm run build
 
     - name: Deploy to Dokploy
-        dokploy deploy mygate --path ./build
+      run : dokploy deploy mygate --path ./build
