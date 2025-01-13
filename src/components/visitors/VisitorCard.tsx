@@ -6,6 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/comp
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUserRole } from '@/hooks/use-user-role';
+import { Share2 } from 'lucide-react';
 
 interface VisitorCardProps {
   visitor: {
@@ -16,6 +17,7 @@ interface VisitorCardProps {
     status: string;
     otp?: string;
     unit_number: string;
+    host_id?: string;
     otp_verified_at?: string;
   };
   onVerify: () => void;
@@ -93,6 +95,22 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
     }
   };
 
+  const handleShare = async () => {
+    if (visitor.otp) {
+      await navigator.clipboard.writeText(
+        `Your OTP for visiting is: ${visitor.otp}. Please show this to security upon arrival.`
+      );
+      toast({
+        title: "Success",
+        description: "OTP copied to clipboard",
+      });
+    }
+  };
+
+  const showApproveButton = isUnitOwner && !visitor.host_id && visitor.status !== 'approved';
+  const showShareButton = isUnitOwner && visitor.host_id === profile?.id && visitor.otp;
+  const showVerifyButton = isSecurity && visitor.status !== 'approved';
+
   return (
     <div className="p-4 flex items-center justify-between border-b">
       <div className="flex items-center space-x-4">
@@ -106,7 +124,7 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
           {isSecurity && (
             <p className="text-sm text-gray-500">Unit: {visitor.unit_number}</p>
           )}
-          {isUnitOwner && visitor.otp && (
+          {isUnitOwner && visitor.otp && visitor.host_id === profile?.id && (
             <p className="text-sm font-medium text-blue-600">OTP: {visitor.otp}</p>
           )}
         </div>
@@ -123,7 +141,7 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
         </span>
         {visitor.status !== 'approved' && (
           <>
-            {isSecurity && (
+            {showVerifyButton && (
               <Dialog open={isVerifying} onOpenChange={setIsVerifying}>
                 <DialogTrigger asChild>
                   <Button variant="outline">Verify OTP</Button>
@@ -153,8 +171,14 @@ export const VisitorCard: React.FC<VisitorCardProps> = ({ visitor, onVerify }) =
                 </DialogContent>
               </Dialog>
             )}
-            {isUnitOwner && (
+            {showApproveButton && (
               <Button onClick={handleApproval}>Approve</Button>
+            )}
+            {showShareButton && (
+              <Button onClick={handleShare} variant="outline">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share OTP
+              </Button>
             )}
           </>
         )}
