@@ -1,6 +1,6 @@
-import React, { StrictMode } from 'react';
+import React from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+import App from './App';
 import './index.css';
 
 // Register service worker
@@ -15,8 +15,10 @@ if ('serviceWorker' in navigator) {
 const root = document.getElementById('root');
 if (!root) throw new Error('Root element not found');
 
-createRoot(root).render(
-  <StrictMode>
+const app = (
+  <React.StrictMode>
     <App />
-  </StrictMode>
+  </React.StrictMode>
 );
+
+createRoot(root).render(app);
