@@ -51,71 +51,103 @@ const Visitors = () => {
       }
       return data;
     },
-    enabled: !!session, // Only run query when session exists
-    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch when window gains focus
+    enabled: !!session,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
   });
 
-  // Subscribe to real-time updates with improved error handling
+  // Subscribe to real-time updates
   useEffect(() => {
-    if (!session) return; // Don't subscribe if there's no session
+    let mounted = true;
+    let currentChannel: any = null;
 
     const setupRealtimeSubscription = async () => {
-      // Clean up existing subscription if any
-      if (channelRef.current) {
-        await supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      if (!session || !mounted) return;
 
-      // Create new subscription
-      const channel = supabase.channel('visitors-changes');
-      
-      channelRef.current = channel;
+      try {
+        // Clean up existing subscription if any
+        if (channelRef.current) {
+          await supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
 
-      const subscription = channel
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'visitors'
+        // Create new subscription
+        const channel = supabase.channel('visitors-changes', {
+          config: {
+            broadcast: { self: true },
+            presence: { key: session.user.id },
           },
-          (payload) => {
-            console.log('Change received!', payload);
-            queryClient.invalidateQueries({ queryKey: ["visitors"] });
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to visitors changes');
-          }
-          if (status === 'CLOSED') {
-            console.log('Subscription closed');
-          }
-          if (status === 'CHANNEL_ERROR') {
-            console.error('Error in channel subscription');
-            toast({
-              title: "Connection Error",
-              description: "Failed to connect to real-time updates",
-              variant: "destructive",
-            });
-          }
         });
+
+        currentChannel = channel;
+        channelRef.current = channel;
+
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'visitors'
+            },
+            (payload) => {
+              if (mounted) {
+                console.log('Change received!', payload);
+                queryClient.invalidateQueries({ queryKey: ["visitors"] });
+              }
+            }
+          )
+          .subscribe(async (status) => {
+            if (!mounted) return;
+
+            if (status === 'SUBSCRIBED') {
+              console.log('Successfully subscribed to visitors changes');
+            }
+            if (status === 'CLOSED') {
+              console.log('Subscription closed');
+            }
+            if (status === 'CHANNEL_ERROR') {
+              console.error('Error in channel subscription');
+              if (mounted) {
+                toast({
+                  title: "Connection Error",
+                  description: "Failed to connect to real-time updates",
+                  variant: "destructive",
+                });
+              }
+            }
+          });
+      } catch (error) {
+        console.error('Error setting up realtime subscription:', error);
+        if (mounted) {
+          toast({
+            title: "Connection Error",
+            description: "Failed to setup real-time updates",
+            variant: "destructive",
+          });
+        }
+      }
     };
 
     setupRealtimeSubscription();
 
     // Cleanup function
     return () => {
+      mounted = false;
       const cleanup = async () => {
-        if (channelRef.current) {
-          await supabase.removeChannel(channelRef.current);
+        if (currentChannel) {
+          try {
+            await supabase.removeChannel(currentChannel);
+          } catch (error) {
+            console.error('Error cleaning up channel:', error);
+          }
+          currentChannel = null;
           channelRef.current = null;
         }
       };
       cleanup();
     };
-  }, [session, queryClient, toast]); // Add session to dependencies
+  }, [session, queryClient, toast]);
 
   const addVisitorMutation = useMutation({
     mutationFn: async (visitorData: any) => {
