@@ -1,27 +1,18 @@
-import { createRoot } from 'react-dom/client'
-import { StrictMode } from 'react'
-import App from './App.tsx'
-import './index.css'
+import React from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
 
-// Register Service Worker
+// Register service worker
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('ServiceWorker registration successful:', registration.scope);
-      
-      // Ensure the service worker takes control immediately
-      if (registration.active) {
-        registration.active.postMessage({ type: 'SKIP_WAITING' });
-      }
-    } catch (error) {
-      console.error('ServiceWorker registration failed:', error);
-    }
+  navigator.serviceWorker.register('/sw.js').then((registration) => {
+    console.log('ServiceWorker registration successful:', registration.scope);
+  }).catch((error) => {
+    console.log('ServiceWorker registration failed:', error);
   });
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+const root = document.getElementById('root');
+if (!root) throw new Error('Root element not found');
+
+createRoot(root).render(<App />);
