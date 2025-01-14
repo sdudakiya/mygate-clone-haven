@@ -90,8 +90,8 @@ const App = () => {
   }));
 
   return (
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
         <TooltipProvider>
           <AuthProvider>
             <AppRoutes />
@@ -99,8 +99,8 @@ const App = () => {
             <Sonner />
           </AuthProvider>
         </TooltipProvider>
-      </QueryClientProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 
