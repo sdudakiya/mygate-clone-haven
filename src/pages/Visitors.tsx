@@ -56,10 +56,12 @@ const Visitors = () => {
     refetchOnWindowFocus: false,
   });
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with reconnection logic
   useEffect(() => {
     let mounted = true;
-    let currentChannel: any = null;
+    let retryCount = 0;
+    const maxRetries = 5;
+    const retryDelay = 1000; // 1 second
 
     const setupRealtimeSubscription = async () => {
       if (!session || !mounted) return;
@@ -71,18 +73,15 @@ const Visitors = () => {
           channelRef.current = null;
         }
 
-        // Create new subscription
-        const channel = supabase.channel('visitors-changes', {
-          config: {
-            broadcast: { self: true },
-            presence: { key: session.user.id },
-          },
-        });
+        console.log("Setting up realtime subscription...");
 
-        currentChannel = channel;
-        channelRef.current = channel;
-
-        channel
+        const channel = supabase
+          .channel('visitors-changes', {
+            config: {
+              broadcast: { self: true },
+              presence: { key: session.user.id },
+            },
+          })
           .on(
             'postgres_changes',
             {
@@ -102,21 +101,40 @@ const Visitors = () => {
 
             if (status === 'SUBSCRIBED') {
               console.log('Successfully subscribed to visitors changes');
+              retryCount = 0; // Reset retry count on successful subscription
             }
             if (status === 'CLOSED') {
               console.log('Subscription closed');
+              // Attempt to reconnect if closed unexpectedly
+              if (retryCount < maxRetries) {
+                retryCount++;
+                setTimeout(() => {
+                  console.log(`Attempting to reconnect... (Attempt ${retryCount})`);
+                  setupRealtimeSubscription();
+                }, retryDelay * retryCount);
+              }
             }
             if (status === 'CHANNEL_ERROR') {
               console.error('Error in channel subscription');
               if (mounted) {
                 toast({
                   title: "Connection Error",
-                  description: "Failed to connect to real-time updates",
+                  description: "Attempting to reconnect...",
                   variant: "destructive",
                 });
               }
+              // Attempt to reconnect on error
+              if (retryCount < maxRetries) {
+                retryCount++;
+                setTimeout(() => {
+                  console.log(`Attempting to reconnect... (Attempt ${retryCount})`);
+                  setupRealtimeSubscription();
+                }, retryDelay * retryCount);
+              }
             }
           });
+
+        channelRef.current = channel;
       } catch (error) {
         console.error('Error setting up realtime subscription:', error);
         if (mounted) {
@@ -135,13 +153,12 @@ const Visitors = () => {
     return () => {
       mounted = false;
       const cleanup = async () => {
-        if (currentChannel) {
+        if (channelRef.current) {
           try {
-            await supabase.removeChannel(currentChannel);
+            await supabase.removeChannel(channelRef.current);
           } catch (error) {
             console.error('Error cleaning up channel:', error);
           }
-          currentChannel = null;
           channelRef.current = null;
         }
       };
