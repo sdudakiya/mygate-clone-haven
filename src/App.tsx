@@ -12,17 +12,7 @@ import Visitors from "./pages/Visitors";
 import Notices from "./pages/Notices";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
-import TestAuth from './contexts/TestAuth'; 
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
+import { useState } from "react";
 
 const LoadingState = () => (
   <Layout>
@@ -38,19 +28,17 @@ const LoadingState = () => (
 );
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-    const { session, isLoading } = useAuth();
+  const { session, isLoading } = useAuth();
 
-    if (isLoading) {
-        return <LoadingState />;
-    }
+  if (isLoading) {
+    return <LoadingState />;
+  }
 
-    // ONLY redirect if user is not logged in AFTER loading
-    if (!session && !isLoading) {
-        return <Navigate to="/login" replace />;
-    }
-    return <Layout>{children}</Layout>;
+  if (!session && !isLoading) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Layout>{children}</Layout>;
 };
-
 
 const AppRoutes = () => (
   <Routes>
@@ -90,18 +78,30 @@ const AppRoutes = () => (
   </Routes>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster />
-          <Sonner />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      },
+    },
+  }));
+
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <AppRoutes />
+            <Toaster />
+            <Sonner />
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+};
 
 export default App;
