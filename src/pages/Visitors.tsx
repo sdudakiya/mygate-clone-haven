@@ -54,10 +54,12 @@ const Visitors = () => {
     refetchOnWindowFocus: false, // Don't refetch when window gains focus
   });
 
-  // Subscribe to real-time updates
+  // Subscribe to real-time updates with improved error handling
   useEffect(() => {
-    const channel = supabase
-      .channel('visitors-changes')
+    let channel = supabase.channel('visitors-changes');
+    
+    // Initialize the channel first
+    const subscription = channel
       .on(
         'postgres_changes',
         {
@@ -65,14 +67,37 @@ const Visitors = () => {
           schema: 'public',
           table: 'visitors'
         },
-        () => {
+        (payload) => {
+          console.log('Change received!', payload);
           queryClient.invalidateQueries({ queryKey: ["visitors"] });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to visitors changes');
+        }
+        if (status === 'CLOSED') {
+          console.log('Subscription closed');
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Error in channel subscription');
+          toast({
+            title: "Connection Error",
+            description: "Failed to connect to real-time updates",
+            variant: "destructive",
+          });
+        }
+      });
 
+    // Cleanup function
     return () => {
-      supabase.removeChannel(channel);
+      const cleanup = async () => {
+        if (channel) {
+          await supabase.removeChannel(channel);
+          channel = null;
+        }
+      };
+      cleanup();
     };
   }, [queryClient]);
 
