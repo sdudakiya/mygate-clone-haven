@@ -1,6 +1,6 @@
 import { ArrowLeft, UserPlus, Clock, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +19,11 @@ import { Label } from "@/components/ui/label";
 import { VisitorList } from "@/components/visitors/VisitorList";
 
 const Visitors = () => {
-  const { profile } = useAuth();
+  const { profile, session } = useAuth();
   const { isSecurity } = useUserRole();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const channelRef = useRef<any>(null);
   const [isAddingVisitor, setIsAddingVisitor] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [newVisitor, setNewVisitor] = useState({
@@ -50,56 +51,71 @@ const Visitors = () => {
       }
       return data;
     },
+    enabled: !!session, // Only run query when session exists
     staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
     refetchOnWindowFocus: false, // Don't refetch when window gains focus
   });
 
   // Subscribe to real-time updates with improved error handling
   useEffect(() => {
-    let channel = supabase.channel('visitors-changes');
-    
-    // Initialize the channel first
-    const subscription = channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'visitors'
-        },
-        (payload) => {
-          console.log('Change received!', payload);
-          queryClient.invalidateQueries({ queryKey: ["visitors"] });
-        }
-      )
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('Successfully subscribed to visitors changes');
-        }
-        if (status === 'CLOSED') {
-          console.log('Subscription closed');
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('Error in channel subscription');
-          toast({
-            title: "Connection Error",
-            description: "Failed to connect to real-time updates",
-            variant: "destructive",
-          });
-        }
-      });
+    if (!session) return; // Don't subscribe if there's no session
+
+    const setupRealtimeSubscription = async () => {
+      // Clean up existing subscription if any
+      if (channelRef.current) {
+        await supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Create new subscription
+      const channel = supabase.channel('visitors-changes');
+      
+      channelRef.current = channel;
+
+      const subscription = channel
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'visitors'
+          },
+          (payload) => {
+            console.log('Change received!', payload);
+            queryClient.invalidateQueries({ queryKey: ["visitors"] });
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('Successfully subscribed to visitors changes');
+          }
+          if (status === 'CLOSED') {
+            console.log('Subscription closed');
+          }
+          if (status === 'CHANNEL_ERROR') {
+            console.error('Error in channel subscription');
+            toast({
+              title: "Connection Error",
+              description: "Failed to connect to real-time updates",
+              variant: "destructive",
+            });
+          }
+        });
+    };
+
+    setupRealtimeSubscription();
 
     // Cleanup function
     return () => {
       const cleanup = async () => {
-        if (channel) {
-          await supabase.removeChannel(channel);
-          channel = null;
+        if (channelRef.current) {
+          await supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
         }
       };
       cleanup();
     };
-  }, [queryClient]);
+  }, [session, queryClient, toast]); // Add session to dependencies
 
   const addVisitorMutation = useMutation({
     mutationFn: async (visitorData: any) => {
