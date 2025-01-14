@@ -28,27 +28,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-
-    const fetchProfile = async (userId: string) => {
-    setIsLoading(true);  // Start loading before fetching
+  const fetchProfile = async (userId: string) => {
     try {
-        const { data, error } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", userId)
-            .single();
-        
-        if(error){
-           console.error("Error fetching profile:", error);
-            toast({
-            title: "Error",
-            description: "Failed to fetch profile",
-            variant: "destructive",
-            });
-           setProfile(null);
-        }else{
-          setProfile(data);
-        }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if(error) {
+        console.error("Error fetching profile:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch profile",
+          variant: "destructive",
+        });
+        setProfile(null);
+      } else {
+        setProfile(data);
+      }
     } catch (error) {
       console.error("Error in fetchProfile:", error);
       toast({
@@ -56,74 +54,90 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: "An unexpected error occurred",
         variant: "destructive",
       });
-     setProfile(null);
-    }finally {
-      setIsLoading(false); // Set loading to false after fetching is complete (either success or failure)
+      setProfile(null);
     }
   };
 
-
   useEffect(() => {
+    let mounted = true;
+
     const loadSession = async () => {
-      setIsLoading(true); // Start loading state
       try {
-          const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error("Error fetching session:", error);
-          toast({
-            title: "Error",
-            description: "Failed to retrieve session",
-            variant: "destructive",
-          });
+          if (mounted) {
+            toast({
+              title: "Error",
+              description: "Failed to retrieve session",
+              variant: "destructive",
+            });
+          }
           return;
         }
 
-          setSession(session);
-          setUser(session?.user ?? null);
+        if (mounted) {
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
 
-          if (session?.user) {
-            await fetchProfile(session.user.id);
+          if (currentSession?.user) {
+            await fetchProfile(currentSession.user.id);
           }
-
-      }catch(error){
-        console.error("Error loading session", error)
-      }finally {
-        setIsLoading(false);  // Ensure loading stops here, even if there's an error
+        }
+      } catch (error) {
+        console.error("Error loading session:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-       setIsLoading(true); // Start loading state
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log("Auth state changed:", event);
       
-      if (event === 'SIGNED_OUT') {
-        setSession(null);
-        setUser(null);
-        setProfile(null);
-        navigate('/login');
-      } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          await fetchProfile(session.user.id);
-        }
-      } else if (event === 'USER_UPDATED') {
-        setSession(session);
-        setUser(session?.user ?? null);
-      }
+      if (!mounted) return;
 
-      setIsLoading(false);
+      setIsLoading(true);
+
+      try {
+        if (event === 'SIGNED_OUT') {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          navigate('/login');
+        } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          if (newSession?.user) {
+            await fetchProfile(newSession.user.id);
+          }
+        } else if (event === 'USER_UPDATED') {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+        }
+      } catch (error) {
+        console.error("Error handling auth state change:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update authentication state",
+          variant: "destructive",
+        });
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
-
+  }, [navigate, toast]);
 
   const signOut = async () => {
     try {
