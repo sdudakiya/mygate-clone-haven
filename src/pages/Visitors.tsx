@@ -51,7 +51,6 @@ const Visitors = () => {
       return data;
     },
     enabled: !!session,
-    staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   });
 

@@ -12,7 +12,8 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
+      staleTime: 0, // Set to 0 to disable caching
+      cacheTime: 0, // Set to 0 to disable caching
     },
   },
 });
