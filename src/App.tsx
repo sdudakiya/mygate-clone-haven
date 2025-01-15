@@ -13,7 +13,7 @@ const queryClient = new QueryClient({
       retry: 1,
       refetchOnWindowFocus: false,
       staleTime: 0, // Set to 0 to disable caching
-      cacheTime: 0, // Set to 0 to disable caching
+      gcTime: 0, // Changed from cacheTime to gcTime (garbage collection time)
     },
   },
 });
