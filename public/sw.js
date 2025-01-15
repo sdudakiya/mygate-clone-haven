@@ -7,14 +7,21 @@ const urlsToCache = [
   '/manifest.json',
   '/favicon.ico',
   '/pwa-192x192.png',
-  '/pwa-512x512.png'
+  '/pwa-512x512.png',
+  // Add placeholder images for offline fallback
+  'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b',
+  'https://images.unsplash.com/photo-1518770660439-4636190af475',
+  'https://images.unsplash.com/photo-1461749280684-dccba630e2f6'
 ];
 
 // Install event
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+      .then((cache) => {
+        console.log('Opened cache');
+        return cache.addAll(urlsToCache);
+      })
       .catch((error) => {
         console.error('Cache installation failed:', error);
       })
@@ -39,53 +46,89 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event
+// Fetch event with improved caching strategies
 self.addEventListener('fetch', (event) => {
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin) && 
+      !event.request.url.includes('images.unsplash.com')) {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      // Serve from cache if available
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      // Fetch from network and cache it
-      return fetch(event.request)
-        .then((networkResponse) => {
-          // Only cache valid responses
-          if (
-            networkResponse &&
-            networkResponse.status === 200 &&
-            networkResponse.type === 'basic'
-          ) {
-            const responseToCache = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
+  // Handle API requests
+  if (event.request.url.includes('/rest/v1/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) {
+            return response;
+          }
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
               cache.put(event.request, responseToCache);
             });
-          }
-          return networkResponse;
+          return response;
         })
-        .catch((error) => {
-          console.error('Fetch failed:', error);
+        .catch(() => {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
 
-          // Fallback to index.html for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+  // Handle navigation requests
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // Handle image requests with fallback
+  if (event.request.destination === 'image') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200) {
+            return caches.match('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b');
           }
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          return response;
+        })
+        .catch(() => {
+          return caches.match('https://images.unsplash.com/photo-1488590528505-98d2b5aba04b');
+        })
+    );
+    return;
+  }
 
-          // Return an offline error for other requests
-          return new Response('Offline content not available', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: new Headers({
-              'Content-Type': 'text/plain'
-            })
+  // Default fetch handler
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch(event.request)
+          .then((response) => {
+            if (!response || response.status !== 200) {
+              return response;
+            }
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
           });
-        });
-    })
+      })
   );
 });
 
