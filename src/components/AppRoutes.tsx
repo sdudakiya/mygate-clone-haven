@@ -30,6 +30,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!session) {
+    // Store the current path before redirecting
+    sessionStorage.setItem('intendedPath', window.location.pathname);
     return <Navigate to="/login" replace />;
   }
 
@@ -72,6 +74,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      {/* Catch-all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };

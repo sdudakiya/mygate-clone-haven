@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 type AuthContextType = {
@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
 
   const fetchProfile = async (userId: string) => {
@@ -115,6 +116,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (newSession?.user) {
             await fetchProfile(newSession.user.id);
           }
+          // Navigate to the intended route or home
+          const intendedPath = sessionStorage.getItem('intendedPath') || '/';
+          sessionStorage.removeItem('intendedPath');
+          navigate(intendedPath);
         } else if (event === 'USER_UPDATED') {
           setSession(newSession);
           setUser(newSession?.user ?? null);

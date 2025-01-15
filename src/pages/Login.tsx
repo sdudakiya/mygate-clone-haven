@@ -11,7 +11,9 @@ const Login = () => {
 
   useEffect(() => {
     if (session) {
-      navigate("/");
+      const intendedPath = sessionStorage.getItem('intendedPath') || '/';
+      sessionStorage.removeItem('intendedPath');
+      navigate(intendedPath);
     }
   }, [session, navigate]);
 
