@@ -31,11 +31,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", userId)
-        .single();
+        .maybeSingle();
       
       if(error) {
         console.error("Error fetching profile:", error);
@@ -46,6 +47,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
         setProfile(null);
       } else {
+        console.log("Profile fetched successfully:", data);
         setProfile(data);
       }
     } catch (error) {
@@ -60,34 +62,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    console.log("AuthProvider mounted");
     let mounted = true;
 
-    const loadSession = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Error fetching session:", error);
-          if (mounted) {
-            toast({
-              title: "Error",
-              description: "Failed to retrieve session",
-              variant: "destructive",
-            });
-          }
-          return;
+        console.log("Initializing auth state");
+        setIsLoading(true);
+        
+        // Get the initial session
+        const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error fetching initial session:", sessionError);
+          throw sessionError;
         }
 
         if (mounted) {
-          setSession(currentSession);
-          setUser(currentSession?.user ?? null);
+          console.log("Setting initial session:", initialSession);
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
 
-          if (currentSession?.user) {
-            await fetchProfile(currentSession.user.id);
+          if (initialSession?.user) {
+            await fetchProfile(initialSession.user.id);
           }
         }
       } catch (error) {
-        console.error("Error loading session:", error);
+        console.error("Error in initializeAuth:", error);
+        if (mounted) {
+          toast({
+            title: "Error",
+            description: "Failed to initialize authentication",
+            variant: "destructive",
+          });
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -95,10 +103,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    loadSession();
+    // Initialize auth state
+    initializeAuth();
 
+    // Set up auth state change subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log("Auth state changed:", event);
+      console.log("Auth state changed:", event, newSession?.user?.id);
       
       if (!mounted) return;
 
@@ -123,6 +133,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else if (event === 'USER_UPDATED') {
           setSession(newSession);
           setUser(newSession?.user ?? null);
+          if (newSession?.user) {
+            await fetchProfile(newSession.user.id);
+          }
         }
       } catch (error) {
         console.error("Error handling auth state change:", error);
