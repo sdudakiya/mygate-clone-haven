@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const initialized = useRef(false);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -65,13 +66,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let mounted = true;
 
     const initializeAuth = async () => {
+      if (initialized.current) return;
+      initialized.current = true;
+
       try {
         console.log("Initializing auth state");
         if (!mounted) return;
         
         setIsLoading(true);
         
-        // Get the initial session
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -85,6 +88,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setSession(initialSession);
             setUser(initialSession.user);
             await fetchProfile(initialSession.user.id);
+            
+            // Check if we need to redirect from login
+            if (location.pathname === '/login') {
+              const intendedPath = sessionStorage.getItem('intendedPath') || '/';
+              sessionStorage.removeItem('intendedPath');
+              navigate(intendedPath);
+            }
           } else {
             setSession(null);
             setUser(null);
@@ -116,7 +126,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!mounted) return;
 
       console.log("Auth state changed:", event, newSession?.user?.id);
-      setIsLoading(true);
 
       try {
         if (event === 'SIGNED_OUT') {
@@ -129,10 +138,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUser(newSession?.user ?? null);
           if (newSession?.user) {
             await fetchProfile(newSession.user.id);
+            const intendedPath = sessionStorage.getItem('intendedPath') || '/';
+            sessionStorage.removeItem('intendedPath');
+            navigate(intendedPath);
           }
-          const intendedPath = sessionStorage.getItem('intendedPath') || '/';
-          sessionStorage.removeItem('intendedPath');
-          navigate(intendedPath);
         } else if (event === 'USER_UPDATED') {
           setSession(newSession);
           setUser(newSession?.user ?? null);
@@ -147,15 +156,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Failed to update authentication state",
           variant: "destructive",
         });
-      } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
       }
     });
 
     return () => {
       mounted = false;
+      initialized.current = false;
       subscription.unsubscribe();
     };
   }, [navigate, toast, location.pathname]);
