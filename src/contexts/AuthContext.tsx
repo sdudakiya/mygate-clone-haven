@@ -70,6 +70,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!mounted) return;
         
         setIsLoading(true);
+        
+        // Get the initial session
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -79,11 +81,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         if (mounted) {
           console.log("Setting initial session:", initialSession);
-          setSession(initialSession);
-          setUser(initialSession?.user ?? null);
-
-          if (initialSession?.user) {
+          if (initialSession) {
+            setSession(initialSession);
+            setUser(initialSession.user);
             await fetchProfile(initialSession.user.id);
+          } else {
+            setSession(null);
+            setUser(null);
+            setProfile(null);
+            if (location.pathname !== '/login') {
+              navigate('/login');
+            }
           }
         }
       } catch (error) {
@@ -150,7 +158,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, toast, location.pathname]);
 
   const signOut = async () => {
     try {
