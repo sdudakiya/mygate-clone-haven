@@ -62,15 +62,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log("AuthProvider mounted");
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
         console.log("Initializing auth state");
-        setIsLoading(true);
+        if (!mounted) return;
         
-        // Get the initial session
+        setIsLoading(true);
         const { data: { session: initialSession }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -103,15 +102,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     };
 
-    // Initialize auth state
     initializeAuth();
 
-    // Set up auth state change subscription
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log("Auth state changed:", event, newSession?.user?.id);
-      
       if (!mounted) return;
 
+      console.log("Auth state changed:", event, newSession?.user?.id);
       setIsLoading(true);
 
       try {
@@ -126,7 +122,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (newSession?.user) {
             await fetchProfile(newSession.user.id);
           }
-          // Navigate to the intended route or home
           const intendedPath = sessionStorage.getItem('intendedPath') || '/';
           sessionStorage.removeItem('intendedPath');
           navigate(intendedPath);
