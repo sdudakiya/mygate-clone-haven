@@ -1,25 +1,9 @@
 import { Link } from "react-router-dom";
-import { Users, FileText, Home, Settings, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { usePWAInstall } from "@/hooks/use-pwa-install";
+import { Users, FileText, Home, Settings } from "lucide-react";
 
 const Index = () => {
-  const { isInstallable, install } = usePWAInstall();
-
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {isInstallable && (
-        <div className="mb-6">
-          <Button
-            onClick={install}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700"
-          >
-            <Download className="h-4 w-4" />
-            Install App
-          </Button>
-        </div>
-      )}
-      
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
         <div className="bg-white p-6 rounded-lg shadow">
